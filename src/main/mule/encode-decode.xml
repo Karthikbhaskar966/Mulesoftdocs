@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="9a096178-2cee-4eee-ab04-aabd34a9a7db" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="choice-routerFlow-upsert" doc:id="e719126a-20df-4835-93df-2539ee3942be" >
+		<http:listener doc:name="Listener" doc:id="48284cdc-9f48-4632-a8ab-4d49f944c4a9" config-ref="HTTP_Listener_config" path="/encode"/>
+		<logger level="INFO" doc:name="Logger" doc:id="69c78349-974d-40d0-85d0-5f1d8525ba1b" message="logger start"/>
+		<ee:transform doc:name="Transform Message" doc:id="b01295ba-c11d-487f-9ee3-72412001cad7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import toBase64 from dw::core::Binaries
+output application/json
+---
+{
+	content: payload,
+	contentDecode: toBase64(payload as Binary)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		
+	</flow>
+	<flow name="encode-decodeFlow" doc:id="5788275f-fe16-46f3-9486-4f3ddfc443a1" >
+		<http:listener doc:name="Listener" doc:id="3bfa52c4-4648-4148-b600-323590559b96" config-ref="HTTP_Listener_config" path="/decode" allowedMethods="POST"/>
+		<ee:transform doc:name="Transform Message" doc:id="5d31b803-06b2-4305-b82a-6044b851960b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import fromBase64 from dw::core::Binaries
+output application/pdf with binary
+---
+fromBase64(payload.content)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	
+</mule>
